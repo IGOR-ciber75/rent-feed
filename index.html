@@ -32,6 +32,8 @@ header{position:sticky;top:0;z-index:9;background:rgba(11,15,20,.92);backdrop-fi
 label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
 input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#0d141d;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;}
 .hint{color:var(--muted);font-size:12px;line-height:1.35;}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:8px 0;color:var(--text);font-size:14px}
+.chk input{margin-top:3px;transform:scale(1.15)}
 .status{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:#0d141d;color:var(--muted);font-size:13px;}
 .dot{width:10px;height:10px;border-radius:50%;}
 .dot.good{background:var(--good);} .dot.bad{background:var(--bad);} .dot.warn{background:var(--warn);}
@@ -53,12 +55,11 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
   <div class="card">
     <p class="h">Крен (градусы)</p>
     <div class="big" id="heelBig">—</div>
-    <div class="sub">Текущее / среднее / разброс</div>
+    <div class="sub">Большие цифры — среднее. Ниже — текущее и разброс.</div>
     <div class="hr"></div>
     <div class="kv">
       <div class="k">Текущее</div><div class="v" id="heelNow">—</div>
-      <div class="k">Среднее</div><div class="v" id="heelAvg">—</div>
-      <div class="k">Разброс (σ)</div><div class="v" id="heelStd">—</div>
+<div class="k">Разброс (σ)</div><div class="v" id="heelStd">—</div>
     </div>
   </div>
 
@@ -69,8 +70,7 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     <div class="hr"></div>
     <div class="kv">
       <div class="k">Текущее (м)</div><div class="v" id="trimNow">—</div>
-      <div class="k">Среднее (м)</div><div class="v" id="trimAvg">—</div>
-      <div class="k">Разброс (σ, °)</div><div class="v" id="trimStd">—</div>
+<div class="k">Разброс (σ, °)</div><div class="v" id="trimStd">—</div>
     </div>
   </div>
 
@@ -90,14 +90,6 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     </div>
     <div class="footerNote">
       Если датчики не работают в Chrome из файла (file://), это ограничение браузера. В HTTPS/PWA — работают.
-    </div>
-  </div>
-
-  <div class="card">
-    <p class="h">Знаки</p>
-    <div class="hint">
-      Дифферент: <span class="mono">+</span> — на корму, <span class="mono">−</span> — на нос.<br/>
-      Крен: <span class="mono">+</span> — направо, <span class="mono">−</span> — налево.
     </div>
   </div>
 </section>
@@ -176,13 +168,13 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
           <div class="hint" style="margin-top:6px;">Рекомендуемо для стола: 0.03–0.08°</div>
         </div>
         <div>
-          <label for="axisHint">Быстрая коррекция осей/знаков</label>
-          <select id="axisHint">
-            <option value="auto" selected>Авто</option>
-            <option value="swap">Поменять X/Y</option>
-            <option value="invertTrim">Инвертировать дифферент</option>
-            <option value="invertHeel">Инвертировать крен</option>
-          </select>
+          <label>Оси и направления</label>
+          <div class="hint" style="margin-top:6px;">Настраивается один раз для вашего упора/стола.</div>
+          <div style="height:8px"></div>
+          <label class="chk"><input id="swapXY" type="checkbox"> Поменять оси X↔Y (крен ↔ дифферент)</label>
+          <label class="chk"><input id="invHeel" type="checkbox"> Инвертировать крен (лево/право)</label>
+          <label class="chk"><input id="invTrim" type="checkbox"> Инвертировать дифферент (нос/корма)</label>
+          <div class="hint" style="margin-top:6px;">Подсказка знаков: крен + = направо, − = налево. Дифферент + = на корму, − = на нос.</div>
         </div>
       </div>
     </div>
@@ -226,7 +218,7 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
   tabSettings.onclick=()=>show("s");
 
   const KEY="ship_inclino_pwa_v1";
-  const DEF={dStern:25,dBow:195,trimRefM:2,heelRefDeg:1,baseTrimDeg:0,baseHeelDeg:0,mode:"ref",avgWindowSec:30,stableStdDeg:0.05,axisHint:"auto"};
+  const DEF={dStern:25,dBow:195,trimRefM:2,heelRefDeg:1,baseTrimDeg:0,baseHeelDeg:0,mode:"ref",avgWindowSec:30,stableStdDeg:0.05,swapXY:false,invHeel:false,invTrim:false};
   let S={...DEF};
 
   function syncUI(){
@@ -237,7 +229,7 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     $("mode").value=S.mode;
     $("avgWindow").value=String(S.avgWindowSec);
     $("stableStdDeg").value=S.stableStdDeg;
-    $("axisHint").value=S.axisHint;
+    $("swapXY").checked=!!S.swapXY; $("invHeel").checked=!!S.invHeel; $("invTrim").checked=!!S.invTrim;
     $("baseTrimDeg").textContent=fmt(S.baseTrimDeg,3);
     $("baseHeelDeg").textContent=fmt(S.baseHeelDeg,3);
     updateDerived();
@@ -251,7 +243,7 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     S.mode=$("mode").value;
     S.avgWindowSec=Number($("avgWindow").value||30);
     S.stableStdDeg=Number($("stableStdDeg").value||0.05);
-    S.axisHint=$("axisHint").value;
+    S.swapXY=$("swapXY").checked; S.invHeel=$("invHeel").checked; S.invTrim=$("invTrim").checked;
   }
   function save(){
     readUI();
@@ -283,7 +275,7 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     $("avgWindowLabel").textContent=S.avgWindowSec+" c";
     $("modeLabel").textContent=(S.mode==="ref")?"С ОПОРОЙ":"БЕЗ ОПОРЫ";
   }
-  ["dStern","dBow","mode","avgWindow","stableStdDeg","axisHint","trimRefM","heelRefDeg"].forEach(id=>{
+  ["dStern","dBow","mode","avgWindow","stableStdDeg","swapXY","invHeel","invTrim","trimRefM","heelRefDeg"].forEach(id=>{
     $(id).addEventListener("input", ()=>{ updateDerived(); updateLabels(); });
     $(id).addEventListener("change", ()=>{ updateDerived(); updateLabels(); });
   });
@@ -365,13 +357,13 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     let ax=a.x, ay=a.y, az=a.z;
     if(![ax,ay,az].every(Number.isFinite)) return;
 
-    if(S.axisHint==="swap"){ const t=ax; ax=ay; ay=t; }
+    if(S.swapXY){ const t=ax; ax=ay; ay=t; }
 
     let roll=deg(Math.atan2(ay, az));
     let pitch=deg(Math.atan2(-ax, Math.sqrt(ay*ay + az*az)));
 
-    if(S.axisHint==="invertTrim") pitch=-pitch;
-    if(S.axisHint==="invertHeel") roll=-roll;
+    if(S.invTrim) pitch=-pitch;
+    if(S.invHeel) roll=-roll;
 
     lastRoll=roll; lastPitch=pitch;
 
@@ -431,18 +423,18 @@ input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid va
     else if(sigma<=th*2.5) setStatus("warn","Почти стабильно");
     else setStatus("bad","Шатает / вибрация");
 
-    const heelShow=hold?hold.heel:out.heelNow;
-    const trimShow=hold?hold.trim:out.trimNow;
+    const heelShow=hold?hold.heel:out.heelAvg;
+    const trimShow=hold?hold.trim:out.trimAvg;
 
     $("heelBig").textContent = `${fmt(heelShow,2)}° ${signHeel(heelShow)}`;
     $("trimBig").textContent = `${fmt(Math.abs(trimShow),2)} м ${signTrim(trimShow)}`;
 
     $("heelNow").textContent = fmt(out.heelNow,2)+"°";
-    $("heelAvg").textContent = fmt(out.heelAvg,2)+"°";
+    const _heelAvgEl=$("heelAvg"); if(_heelAvgEl) _heelAvgEl.textContent = fmt(out.heelAvg,2)+"°";
     $("heelStd").textContent = fmt(out.sigH,3)+"°";
 
     $("trimNow").textContent = fmt(out.trimNow,2)+" м";
-    $("trimAvg").textContent = fmt(out.trimAvg,2)+" м";
+    const _trimAvgEl=$("trimAvg"); if(_trimAvgEl) _trimAvgEl.textContent = fmt(out.trimAvg,2)+" м";
     $("trimStd").textContent = fmt(out.sigP,3)+"°";
 
     $("trimSub").textContent = "Длина: "+fmt(out.L,1)+" м";
